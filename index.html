@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skylark Drone Operations Coordinator</title>
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel Standalone for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 50%, #EEF2FF 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    /* Header Styles */
+    .header {
+      background: white;
+      border-bottom: 1px solid #E5E7EB;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .logo-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .logo-text p {
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    .status-badge {
+      padding: 0.5rem 1rem;
+      background: #D1FAE5;
+      color: #065F46;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Dashboard Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #E5E7EB;
+      padding: 1rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: #6B7280;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 1.875rem;
+      font-weight: 700;
+    }
+
+    .stat-value.blue { color: #2563EB; }
+    .stat-value.green { color: #059669; }
+    .stat-value.indigo { color: #4F46E5; }
+    .stat-value.red { color: #DC2626; }
+
+    /* Chat Container */
+    .chat-container {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #E5E7EB;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+      overflow: hidden;
+    }
+
+    .messages-area {
+      height: 500px;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .message-wrapper {
+      display: flex;
+      width: 100%;
+    }
+
+    .message-wrapper.user {
+      justify-content: flex-end;
+    }
+
+    .message-wrapper.assistant {
+      justify-content: flex-start;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      background: #2563EB;
+      color: white;
+    }
+
+    .message.assistant {
+      background: #F3F4F6;
+      color: #111827;
+    }
+
+    .message strong {
+      font-weight: 600;
+    }
+
+    .loading-message {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #F3F4F6;
+      border-radius: 8px;
+      color: #6B7280;
+      font-size: 0.875rem;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #E5E7EB;
+      border-top-color: #2563EB;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Input Area */
+    .input-area {
+      border-top: 1px solid #E5E7EB;
+      padding: 1rem;
+      background: #F9FAFB;
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .input-field:disabled {
+      background: #F3F4F6;
+      cursor: not-allowed;
+    }
+
+    .send-button {
+      padding: 0.75rem 1.5rem;
+      background: #2563EB;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .send-button:hover:not(:disabled) {
+      background: #1D4ED8;
+    }
+
+    .send-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .input-hints {
+      margin-top: 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #6B7280;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .message {
+        max-width: 90%;
+      }
+    }
+
+    /* Scrollbar Styling */
+    .messages-area::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .messages-area::-webkit-scrollbar-track {
+      background: #F3F4F6;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb {
+      background: #D1D5DB;
+      border-radius: 4px;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb:hover {
+      background: #9CA3AF;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const DroneCoordinator = () => {
+      const [messages, setMessages] = useState([
+        {
+          role: 'assistant',
+          content: 'Hi! I\'m your Drone Operations Coordinator AI. I can help you with:\n\n• Checking pilot availability and skills\n• Assigning pilots to missions\n• Managing drone inventory\n• Detecting conflicts and issues\n• Handling urgent reassignments\n\nHow can I assist you today?'
+        }
+      ]);
+      const [input, setInput] = useState('');
+      const [isLoading, setIsLoading] = useState(false);
+      const [dataLoaded, setDataLoaded] = useState(false);
+      const messagesEndRef = useRef(null);
+
+      const [pilots, setPilots] = useState([
+        { pilot_id: 'P001', name: 'Arjun', skills: ['Mapping', 'Survey'], certifications: ['DGCA', 'Night Ops'], location: 'Bangalore', status: 'Available', current_assignment: null, available_from: '2026-02-05' },
+        { pilot_id: 'P002', name: 'Neha', skills: ['Inspection'], certifications: ['DGCA'], location: 'Mumbai', status: 'Assigned', current_assignment: 'PRJ001', available_from: '2026-02-12' },
+        { pilot_id: 'P003', name: 'Rohit', skills: ['Inspection', 'Mapping'], certifications: ['DGCA'], location: 'Mumbai', status: 'Available', current_assignment: null, available_from: '2026-02-05' },
+        { pilot_id: 'P004', name: 'Sneha', skills: ['Survey', 'Thermal'], certifications: ['DGCA', 'Night Ops'], location: 'Bangalore', status: 'On Leave', current_assignment: null, available_from: '2026-02-15' }
+      ]);
+
+      const [drones, setDrones] = useState([
+        { drone_id: 'D001', model: 'DJI M300', capabilities: ['LiDAR', 'RGB'], status: 'Available', location: 'Bangalore', current_assignment: null, maintenance_due: '2026-03-01' },
+        { drone_id: 'D002', model: 'DJI Mavic 3', capabilities: ['RGB'], status: 'Maintenance', location: 'Mumbai', current_assignment: null, maintenance_due: '2026-02-01' },
+        { drone_id: 'D003', model: 'DJI Mavic 3T', capabilities: ['Thermal'], status: 'Available', location: 'Mumbai', current_assignment: null, maintenance_due: '2026-04-01' },
+        { drone_id: 'D004', model: 'Autel Evo II', capabilities: ['Thermal', 'RGB'], status: 'Available', location: 'Bangalore', current_assignment: null, maintenance_due: '2026-03-15' }
+      ]);
+
+      const [missions, setMissions] = useState([
+        { project_id: 'PRJ001', client: 'Client A', location: 'Bangalore', required_skills: ['Mapping'], required_certs: ['DGCA'], start_date: '2026-02-06', end_date: '2026-02-08', priority: 'High', assigned_pilot: null, assigned_drone: null },
+        { project_id: 'PRJ002', client: 'Client B', location: 'Mumbai', required_skills: ['Inspection'], required_certs: ['DGCA', 'Night Ops'], start_date: '2026-02-07', end_date: '2026-02-09', priority: 'Urgent', assigned_pilot: null, assigned_drone: null },
+        { project_id: 'PRJ003', client: 'Client C', location: 'Bangalore', required_skills: ['Thermal'], required_certs: ['DGCA'], start_date: '2026-02-10', end_date: '2026-02-12', priority: 'Standard', assigned_pilot: null, assigned_drone: null }
+      ]);
+
+      useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [messages]);
+
+      useEffect(() => {
+        setDataLoaded(true);
+      }, []);
+
+      const parseDate = (dateStr) => new Date(dateStr);
+
+      const datesOverlap = (start1, end1, start2, end2) => {
+        const s1 = parseDate(start1);
+        const e1 = parseDate(end1);
+        const s2 = parseDate(start2);
+        const e2 = parseDate(end2);
+        return s1 <= e2 && s2 <= e1;
+      };
+
+      const detectConflicts = (pilotId, droneId, projectId) => {
+        const conflicts = [];
+        const project = missions.find(m => m.project_id === projectId);
+        
+        if (!project) return conflicts;
+
+        if (pilotId) {
+          const pilot = pilots.find(p => p.pilot_id === pilotId);
+          
+          if (pilot.status === 'On Leave') {
+            conflicts.push({
+              type: 'pilot_unavailable',
+              severity: 'high',
+              message: `${pilot.name} is currently on leave until ${pilot.available_from}`
+            });
+          }
+
+          const hasRequiredSkills = project.required_skills.every(skill => 
+            pilot.skills.includes(skill)
+          );
+          if (!hasRequiredSkills) {
+            conflicts.push({
+              type: 'skill_mismatch',
+              severity: 'high',
+              message: `${pilot.name} lacks required skills: ${project.required_skills.join(', ')}. Pilot has: ${pilot.skills.join(', ')}`
+            });
+          }
+
+          const hasRequiredCerts = project.required_certs.every(cert => 
+            pilot.certifications.includes(cert)
+          );
+          if (!hasRequiredCerts) {
+            conflicts.push({
+              type: 'cert_mismatch',
+              severity: 'high',
+              message: `${pilot.name} lacks required certifications: ${project.required_certs.join(', ')}`
+            });
+          }
+
+          if (pilot.location !== project.location) {
+            conflicts.push({
+              type: 'location_mismatch',
+              severity: 'medium',
+              message: `${pilot.name} is in ${pilot.location} but project is in ${project.location}`
+            });
+          }
+
+          const overlappingMissions = missions.filter(m => 
+            m.assigned_pilot === pilotId && 
+            m.project_id !== projectId &&
+            datesOverlap(m.start_date, m.end_date, project.start_date, project.end_date)
+          );
+          if (overlappingMissions.length > 0) {
+            conflicts.push({
+              type: 'double_booking',
+              severity: 'high',
+              message: `${pilot.name} is already assigned to ${overlappingMissions[0].project_id} during overlapping dates`
+            });
+          }
+        }
+
+        if (droneId) {
+          const drone = drones.find(d => d.drone_id === droneId);
+          
+          if (drone.status === 'Maintenance') {
+            conflicts.push({
+              type: 'drone_maintenance',
+              severity: 'high',
+              message: `${drone.model} (${drone.drone_id}) is currently in maintenance`
+            });
+          }
+
+          if (drone.location !== project.location) {
+            conflicts.push({
+              type: 'drone_location_mismatch',
+              severity: 'medium',
+              message: `Drone is in ${drone.location} but project is in ${project.location}`
+            });
+          }
+
+          const overlappingDroneMissions = missions.filter(m => 
+            m.assigned_drone === droneId && 
+            m.project_id !== projectId &&
+            datesOverlap(m.start_date, m.end_date, project.start_date, project.end_date)
+          );
+          if (overlappingDroneMissions.length > 0) {
+            conflicts.push({
+              type: 'drone_double_booking',
+              severity: 'high',
+              message: `Drone ${drone.drone_id} is already assigned to ${overlappingDroneMissions[0].project_id}`
+            });
+          }
+        }
+
+        return conflicts;
+      };
+
+      const findBestPilot = (projectId) => {
+        const project = missions.find(m => m.project_id === projectId);
+        if (!project) return null;
+
+        const availablePilots = pilots.filter(p => {
+          if (p.status !== 'Available') return false;
+          
+          const hasSkills = project.required_skills.every(skill => p.skills.includes(skill));
+          const hasCerts = project.required_certs.every(cert => p.certifications.includes(cert));
+          
+          return hasSkills && hasCerts;
+        });
+
+        const localPilots = availablePilots.filter(p => p.location === project.location);
+        return localPilots.length > 0 ? localPilots[0] : availablePilots[0];
+      };
+
+      const processQuery = async (query) => {
+        const lowerQuery = query.toLowerCase();
+        
+        if (lowerQuery.includes('pilot') && (lowerQuery.includes('available') || lowerQuery.includes('who'))) {
+          const availablePilots = pilots.filter(p => p.status === 'Available');
+          if (availablePilots.length === 0) {
+            return 'Currently, no pilots are available. All pilots are either assigned or on leave.';
+          }
+          
+          let response = `**Available Pilots (${availablePilots.length}):**\n\n`;
+          availablePilots.forEach(p => {
+            response += `• **${p.name}** (${p.pilot_id})\n`;
+            response += `  - Skills: ${p.skills.join(', ')}\n`;
+            response += `  - Certifications: ${p.certifications.join(', ')}\n`;
+            response += `  - Location: ${p.location}\n\n`;
+          });
+          return response;
+        }
+
+        if (lowerQuery.includes('mapping') || lowerQuery.includes('inspection') || lowerQuery.includes('thermal') || lowerQuery.includes('survey')) {
+          let skill = '';
+          if (lowerQuery.includes('mapping')) skill = 'Mapping';
+          if (lowerQuery.includes('inspection')) skill = 'Inspection';
+          if (lowerQuery.includes('thermal')) skill = 'Thermal';
+          if (lowerQuery.includes('survey')) skill = 'Survey';
+          
+          const skilledPilots = pilots.filter(p => p.skills.includes(skill) && p.status === 'Available');
+          
+          if (skilledPilots.length === 0) {
+            return `No available pilots with ${skill} skills at the moment.`;
+          }
+          
+          let response = `**Available pilots with ${skill} skills:**\n\n`;
+          skilledPilots.forEach(p => {
+            response += `• **${p.name}** (${p.pilot_id}) - ${p.location}\n`;
+          });
+          return response;
+        }
+
+        if (lowerQuery.includes('drone') && lowerQuery.includes('available')) {
+          const availableDrones = drones.filter(d => d.status === 'Available');
+          
+          let response = `**Available Drones (${availableDrones.length}):**\n\n`;
+          availableDrones.forEach(d => {
+            response += `• **${d.model}** (${d.drone_id})\n`;
+            response += `  - Capabilities: ${d.capabilities.join(', ')}\n`;
+            response += `  - Location: ${d.location}\n`;
+            response += `  - Maintenance Due: ${d.maintenance_due}\n\n`;
+          });
+          return response;
+        }
+
+        if (lowerQuery.includes('mission') || lowerQuery.includes('project')) {
+          let response = `**Active Missions:**\n\n`;
+          missions.forEach(m => {
+            response += `• **${m.project_id}** - ${m.client} (${m.priority} priority)\n`;
+            response += `  - Location: ${m.location}\n`;
+            response += `  - Dates: ${m.start_date} to ${m.end_date}\n`;
+            response += `  - Required Skills: ${m.required_skills.join(', ')}\n`;
+            response += `  - Assigned Pilot: ${m.assigned_pilot || 'None'}\n`;
+            response += `  - Assigned Drone: ${m.assigned_drone || 'None'}\n\n`;
+          });
+          return response;
+        }
+
+        if (lowerQuery.includes('assign') && lowerQuery.includes('to')) {
+          const projectMatch = query.match(/PRJ\d+/i);
+          const pilotMatch = query.match(/P\d+/i);
+          
+          if (projectMatch) {
+            const projectId = projectMatch[0].toUpperCase();
+            const project = missions.find(m => m.project_id === projectId);
+            
+            if (!project) {
+              return `Project ${projectId} not found.`;
+            }
+
+            let pilotId = pilotMatch ? pilotMatch[0].toUpperCase() : null;
+            
+            if (!pilotId) {
+              const bestPilot = findBestPilot(projectId);
+              if (!bestPilot) {
+                return `No suitable pilots available for ${projectId}. Required skills: ${project.required_skills.join(', ')}, Certifications: ${project.required_certs.join(', ')}`;
+              }
+              pilotId = bestPilot.pilot_id;
+            }
+
+            const conflicts = detectConflicts(pilotId, null, projectId);
+            
+            if (conflicts.some(c => c.severity === 'high')) {
+              let response = `⚠️ **Cannot assign ${pilotId} to ${projectId}. Issues detected:**\n\n`;
+              conflicts.forEach(c => {
+                response += `• ${c.message}\n`;
+              });
+              return response;
+            }
+
+            const updatedMissions = missions.map(m => 
+              m.project_id === projectId ? { ...m, assigned_pilot: pilotId } : m
+            );
+            setMissions(updatedMissions);
+
+            const updatedPilots = pilots.map(p => 
+              p.pilot_id === pilotId ? { ...p, status: 'Assigned', current_assignment: projectId } : p
+            );
+            setPilots(updatedPilots);
+
+            let response = `✅ **Assignment successful!**\n\n`;
+            response += `Assigned ${pilots.find(p => p.pilot_id === pilotId).name} to ${projectId}\n\n`;
+            
+            if (conflicts.length > 0) {
+              response += `⚠️ **Warnings:**\n`;
+              conflicts.forEach(c => {
+                response += `• ${c.message}\n`;
+              });
+            }
+            
+            return response;
+          }
+        }
+
+        if (lowerQuery.includes('update') && lowerQuery.includes('status')) {
+          const pilotMatch = query.match(/P\d+/i);
+          const statusMatch = query.match(/\b(available|on leave|unavailable|assigned)\b/i);
+          
+          if (pilotMatch && statusMatch) {
+            const pilotId = pilotMatch[0].toUpperCase();
+            const newStatus = statusMatch[0];
+            
+            const updatedPilots = pilots.map(p => 
+              p.pilot_id === pilotId ? { ...p, status: newStatus.charAt(0).toUpperCase() + newStatus.slice(1) } : p
+            );
+            setPilots(updatedPilots);
+            
+            return `✅ Updated ${pilots.find(p => p.pilot_id === pilotId).name}'s status to: ${newStatus}`;
+          }
+        }
+
+        if (lowerQuery.includes('conflict') || lowerQuery.includes('issue')) {
+          let allConflicts = [];
+          
+          missions.forEach(m => {
+            if (m.assigned_pilot || m.assigned_drone) {
+              const conflicts = detectConflicts(m.assigned_pilot, m.assigned_drone, m.project_id);
+              if (conflicts.length > 0) {
+                allConflicts.push({ project: m.project_id, conflicts });
+              }
+            }
+          });
+
+          if (allConflicts.length === 0) {
+            return '✅ No conflicts detected in current assignments.';
+          }
+
+          let response = '⚠️ **Conflicts Detected:**\n\n';
+          allConflicts.forEach(({ project, conflicts }) => {
+            response += `**${project}:**\n`;
+            conflicts.forEach(c => {
+              response += `• ${c.message}\n`;
+            });
+            response += '\n';
+          });
+          return response;
+        }
+
+        if (lowerQuery.includes('urgent') || lowerQuery.includes('reassign')) {
+          const urgentMissions = missions.filter(m => m.priority === 'Urgent' && !m.assigned_pilot);
+          
+          if (urgentMissions.length === 0) {
+            return 'No urgent missions requiring reassignment at this time.';
+          }
+
+          let response = '🚨 **Urgent Mission Alert:**\n\n';
+          urgentMissions.forEach(m => {
+            response += `**${m.project_id}** - ${m.client}\n`;
+            response += `Location: ${m.location}\n`;
+            response += `Dates: ${m.start_date} to ${m.end_date}\n`;
+            response += `Required: ${m.required_skills.join(', ')}\n\n`;
+            
+            const bestPilot = findBestPilot(m.project_id);
+            if (bestPilot) {
+              response += `✅ Recommended pilot: **${bestPilot.name}** (${bestPilot.pilot_id})\n`;
+              response += `Type "assign ${bestPilot.pilot_id} to ${m.project_id}" to confirm.\n\n`;
+            } else {
+              response += `⚠️ No suitable pilots available.\n\n`;
+            }
+          });
+          
+          return response;
+        }
+
+        return `I can help you with:
+
+• **Check availability**: "Who's available?" or "Available pilots with Mapping skills"
+• **View missions**: "Show missions" or "Project status"
+• **Assign pilots**: "Assign P001 to PRJ001" or "Assign to PRJ002"
+• **Check drones**: "Available drones"
+• **Detect issues**: "Check for conflicts"
+• **Urgent tasks**: "Show urgent missions"
+• **Update status**: "Update P001 status to On Leave"
+
+What would you like to do?`;
+      };
+
+      const handleSend = async () => {
+        if (!input.trim() || isLoading) return;
+
+        const userMessage = { role: 'user', content: input };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+        setIsLoading(true);
+
+        try {
+          const response = await processQuery(input);
+          
+          setTimeout(() => {
+            setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+            setIsLoading(false);
+          }, 500);
+        } catch (error) {
+          setMessages(prev => [...prev, { 
+            role: 'assistant', 
+            content: '⚠️ Sorry, I encountered an error processing your request. Please try again.' 
+          }]);
+          setIsLoading(false);
+        }
+      };
+
+      const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      };
+
+      return (
+        <div>
+          <div className="header">
+            <div className="container">
+              <div className="header-content">
+                <div className="logo-section">
+                  <div className="logo">SD</div>
+                  <div className="logo-text">
+                    <h1>Skylark Drone Operations</h1>
+                    <p>AI Coordinator Assistant</p>
+                  </div>
+                </div>
+                <div className="status-badge">
+                  <span>✓</span>
+                  <span>{dataLoaded ? 'Data Synced' : 'Loading...'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="container">
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-label">Available Pilots</div>
+                <div className="stat-value blue">
+                  {pilots.filter(p => p.status === 'Available').length}/{pilots.length}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Available Drones</div>
+                <div className="stat-value green">
+                  {drones.filter(d => d.status === 'Available').length}/{drones.length}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Active Missions</div>
+                <div className="stat-value indigo">{missions.length}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Urgent Tasks</div>
+                <div className="stat-value red">
+                  {missions.filter(m => m.priority === 'Urgent').length}
+                </div>
+              </div>
+            </div>
+
+            <div className="chat-container">
+              <div className="messages-area">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className={`message-wrapper ${msg.role}`}>
+                    <div className={`message ${msg.role}`}>
+                      {msg.content.split('**').map((part, i) => 
+                        i % 2 === 0 ? part : <strong key={i}>{part}</strong>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="message-wrapper assistant">
+                    <div className="loading-message">
+                      <div className="spinner"></div>
+                      <span>Processing...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="input-area">
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask me anything... (e.g., 'Who's available for Mapping?' or 'Assign P001 to PRJ002')"
+                    className="input-field"
+                    disabled={isLoading}
+                  />
+                  <button
+                    onClick={handleSend}
+                    disabled={isLoading || !input.trim()}
+                    className="send-button"
+                  >
+                    <span>→</span>
+                    <span>Send</span>
+                  </button>
+                </div>
+                <div className="input-hints">
+                  Try: "Available pilots" • "Show missions" • "Assign to PRJ001" • "Check conflicts"
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<DroneCoordinator />, document.getElementById('root'));
+  </script>
+</body>
+</html>

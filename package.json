@@ -1,0 +1,26 @@
+{
+  "name": "drone-operations-coordinator",
+  "version": "1.0.0",
+  "description": "AI-powered drone operations coordinator for Skylark Drones",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve .",
+    "build": "echo 'No build needed - static HTML app'"
+  },
+  "keywords": [
+    "drone",
+    "operations",
+    "AI",
+    "coordinator",
+    "react",
+    "assignment",
+    "management"
+  ],
+  "author": "Claude AI",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}
